@@ -5,6 +5,7 @@ public class UtilisateurDTO {
     private String nom;
     private String prenom;
     private String email;
+    private String role;
 
     public String getNom() {
         return nom;
@@ -28,6 +29,14 @@ public class UtilisateurDTO {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }
 

@@ -16,7 +16,7 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    // Clé secrète pour signer le token
+    // Clé secrète pour signer le token (peut être améliorée pour plus de sécurité)
     private final Key cleSecrete = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
     // Durée de validité du token : 30 minutes
@@ -25,6 +25,7 @@ public class JwtService {
     // Génère un token pour un utilisateur
     public String genererToken(UserDetails utilisateur) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("role", utilisateur.getAuthorities());  // Ajout du rôle dans le token
         return creerToken(claims, utilisateur.getUsername());
     }
 

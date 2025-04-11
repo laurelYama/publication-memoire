@@ -1,4 +1,4 @@
-package com.esiitech.publication_memoire.service;
+package com.esiitech.publication_memoire.service.implementations;
 
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;

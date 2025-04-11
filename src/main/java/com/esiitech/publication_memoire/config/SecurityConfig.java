@@ -1,6 +1,6 @@
 package com.esiitech.publication_memoire.config;
 
-import com.esiitech.publication_memoire.service.CustomUserDetailsService;
+import com.esiitech.publication_memoire.service.implementations.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,7 +10,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -34,9 +33,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/connexion", "/inscription").permitAll()
+                        .requestMatchers("api/auth/**").permitAll()
                         .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/utilisateurs/**").permitAll()
+                        .requestMatchers("/api/validations/**").hasAnyRole("LECTEUR", "ADMIN")
+                        .requestMatchers("/api/memoires/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(fournisseurAuthentification())

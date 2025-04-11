@@ -2,7 +2,7 @@ package com.esiitech.publication_memoire.controller;
 
 import com.esiitech.publication_memoire.dto.CreateMemoireDto;
 import com.esiitech.publication_memoire.dto.MemoireDto;
-import com.esiitech.publication_memoire.services.MemoireService;
+import com.esiitech.publication_memoire.service.interfaces.MemoireService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

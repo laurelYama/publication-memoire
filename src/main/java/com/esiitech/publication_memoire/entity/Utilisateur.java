@@ -1,6 +1,6 @@
 package com.esiitech.publication_memoire.entity;
 
-import com.esiitech.publication_memoire.Enum.Role;
+import com.esiitech.publication_memoire.enums.Role;
 import jakarta.persistence.*;
 import lombok.Data;
 

@@ -2,16 +2,16 @@ package com.esiitech.publication_memoire.controller;
 
 import com.esiitech.publication_memoire.dto.UtilisateurDTO;
 import com.esiitech.publication_memoire.entity.Utilisateur;
+import com.esiitech.publication_memoire.enums.Role;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
-import com.esiitech.publication_memoire.service.UtilisateurService;
-import lombok.RequiredArgsConstructor;
+import com.esiitech.publication_memoire.service.implementations.UtilisateurService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -25,10 +25,10 @@ public class AdminController {
         this.utilisateurRepository = utilisateurRepository;
     }
 
-    @PostMapping("/lecteurs")
-    public ResponseEntity<?> ajouterLecteur(@RequestBody UtilisateurDTO request) {
-        if (request.getNom() == null || request.getPrenom() == null || request.getEmail() == null) {
-            return ResponseEntity.badRequest().body(Map.of("message", "Tous les champs sont requis."));
+    @PostMapping("/utilisateurs")
+    public ResponseEntity<?> ajouterUtilisateur(@RequestBody UtilisateurDTO request) {
+        if (request.getNom() == null || request.getPrenom() == null || request.getEmail() == null || request.getRole() == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Tous les champs sont requis, y compris le rôle."));
         }
 
         // Vérifier si l'email est déjà utilisé
@@ -36,10 +36,27 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("message", "Cet email est déjà utilisé."));
         }
 
-        Utilisateur lecteur = utilisateurService.creerLecteur(request.getNom(), request.getPrenom(), request.getEmail());
+        try {
+            Role role = Role.valueOf(request.getRole().toUpperCase()); // Convertit le String en enum
+            Utilisateur utilisateur = utilisateurService.creerUtilisateur(
+                    request.getNom(), request.getPrenom(), request.getEmail(), role
+            );
 
-        return ResponseEntity.ok(Map.of("message", "Lecteur créé avec succès. Email d'activation envoyé."));
+            return ResponseEntity.ok(Map.of("message", "Utilisateur créé avec succès. Email d'activation envoyé."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Le rôle fourni est invalide."));
+        }
     }
+
+
+    @GetMapping("/roles")
+    public ResponseEntity<List<String>> getRoles() {
+        List<String> roles = Arrays.stream(Role.values())
+                .map(Enum::name)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(roles);
+    }
+
 
 
 }

@@ -1,4 +1,4 @@
-package com.esiitech.publication_memoire.service;
+package com.esiitech.publication_memoire.service.implementations;
 
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,6 +18,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Retourne les rôles de l'utilisateur sous forme de GrantedAuthority
         return Collections.singletonList(
                 new SimpleGrantedAuthority(utilisateur.getRole().name())
         );
@@ -53,8 +54,8 @@ public class CustomUserDetails implements UserDetails {
         return utilisateur.isActif();
     }
 
+    // Accède à l'objet Utilisateur complet si nécessaire
     public Utilisateur getUtilisateur() {
         return utilisateur;
     }
 }
-

@@ -3,7 +3,7 @@ package com.esiitech.publication_memoire.controller;
 import com.esiitech.publication_memoire.dto.ActivationRequest;
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
-import com.esiitech.publication_memoire.service.UtilisateurService;
+import com.esiitech.publication_memoire.service.implementations.UtilisateurService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;

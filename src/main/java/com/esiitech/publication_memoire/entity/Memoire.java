@@ -25,7 +25,7 @@ public class Memoire {
 
     @ManyToOne
     @JoinColumn(name = "auteur_id")
-    private User auteur;
+    private Utilisateur auteur;
 
     @OneToMany(mappedBy = "memoire", cascade = CascadeType.ALL)
     private List<Validation> validations;
@@ -50,8 +50,13 @@ public class Memoire {
     public StatutMemoire getStatut() { return statut; }
     public void setStatut(StatutMemoire statut) { this.statut = statut; }
 
-    public User getAuteur() { return auteur; }
-    public void setAuteur(User auteur) { this.auteur = auteur; }
+    public Utilisateur getAuteur() {
+        return auteur;
+    }
+
+    public void setAuteur(Utilisateur auteur) {
+        this.auteur = auteur;
+    }
 
     public List<Validation> getValidations() { return validations; }
     public void setValidations(List<Validation> validations) { this.validations = validations; }

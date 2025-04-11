@@ -2,7 +2,7 @@ package com.esiitech.publication_memoire.controller;
 
 import com.esiitech.publication_memoire.dto.CreateValidationDto;
 import com.esiitech.publication_memoire.dto.ValidationDto;
-import com.esiitech.publication_memoire.services.ValidationService;
+import com.esiitech.publication_memoire.service.interfaces.ValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

@@ -1,4 +1,4 @@
-package com.esiitech.publication_memoire.service.impl;
+package com.esiitech.publication_memoire.service.implementations;
 
 import com.esiitech.publication_memoire.dto.CreateValidationDto;
 import com.esiitech.publication_memoire.dto.ValidationDto;
@@ -6,7 +6,7 @@ import com.esiitech.publication_memoire.entity.Memoire;
 import com.esiitech.publication_memoire.entity.Validation;
 import com.esiitech.publication_memoire.repository.MemoireRepository;
 import com.esiitech.publication_memoire.repository.ValidationRepository;
-import com.esiitech.publication_memoire.services.ValidationService;
+import com.esiitech.publication_memoire.service.interfaces.ValidationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

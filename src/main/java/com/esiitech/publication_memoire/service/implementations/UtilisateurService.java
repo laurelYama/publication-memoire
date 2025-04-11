@@ -1,7 +1,7 @@
-package com.esiitech.publication_memoire.service;
+package com.esiitech.publication_memoire.service.implementations;
 
-import com.esiitech.publication_memoire.Enum.Role;
 import com.esiitech.publication_memoire.entity.Utilisateur;
+import com.esiitech.publication_memoire.enums.Role;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
 import org.springframework.stereotype.Service;
 
@@ -35,30 +35,32 @@ public class UtilisateurService {
         return password.toString();
     }
 
-    public Utilisateur creerLecteur(String nom, String prenom, String email) {
-        // Vérifier si l'email existe déjà
+    public Utilisateur creerUtilisateur(String nom, String prenom, String email, Role role) {
         if (utilisateurRepository.existsByEmail(email)) {
             throw new RuntimeException("L'email est déjà utilisé !");
         }
 
         String token = UUID.randomUUID().toString();
-        String temporaryPassword = generateTemporaryPassword(); // Mot de passe temporaire généré
-        Utilisateur lecteur = new Utilisateur();
-        lecteur.setNom(nom);
-        lecteur.setPrenom(prenom);
-        lecteur.setEmail(email);
-        lecteur.setRole(Role.LECTEUR);
-        lecteur.setActivationToken(token);
-        lecteur.setMotDePasse(temporaryPassword); // On enregistre le mot de passe temporaire
-        lecteur.setTokenExpiration(LocalDateTime.now().plusHours(24));
-        lecteur.setActif(false); // Le compte n'est pas encore actif
-        lecteur.setPasswordCreated(false); // Le mot de passe n'a pas encore été modifié
+        String temporaryPassword = generateTemporaryPassword();
 
-        utilisateurRepository.save(lecteur);
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setNom(nom);
+        utilisateur.setPrenom(prenom);
+        utilisateur.setEmail(email);
+        utilisateur.setRole(role); // Rôle choisi dynamiquement par l'admin
+        utilisateur.setActivationToken(token);
+        utilisateur.setMotDePasse(temporaryPassword);
+        utilisateur.setTokenExpiration(LocalDateTime.now().plusHours(24));
+        utilisateur.setActif(false);
+        utilisateur.setPasswordCreated(false);
 
-        // Envoi de l'email avec le mot de passe temporaire
-        emailService.sendActivationEmail(email, token);
+        utilisateurRepository.save(utilisateur);
 
-        return lecteur;
+        // Envoi de l’email avec le lien d’activation (sans le mot de passe temporaire si tu l’as retiré)
+        emailService.sendActivationEmail(email, token, nom, prenom, role.name());
+
+
+        return utilisateur;
     }
+
 }

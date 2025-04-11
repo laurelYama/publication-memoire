@@ -1,13 +1,13 @@
-package com.esiitech.publication_memoire.service.impl;
+package com.esiitech.publication_memoire.service.implementations;
 
 import com.esiitech.publication_memoire.dto.CreateMemoireDto;
 import com.esiitech.publication_memoire.dto.MemoireDto;
 import com.esiitech.publication_memoire.entity.Memoire;
-import com.esiitech.publication_memoire.entity.User;
+import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.enums.StatutMemoire;
 import com.esiitech.publication_memoire.repository.MemoireRepository;
-import com.esiitech.publication_memoire.repository.UserRepository;
-import com.esiitech.publication_memoire.services.MemoireService;
+import com.esiitech.publication_memoire.repository.UtilisateurRepository;
+import com.esiitech.publication_memoire.service.interfaces.MemoireService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,11 +21,11 @@ public class MemoireServiceImpl implements MemoireService {
     private MemoireRepository memoireRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private UtilisateurRepository utilisateurRepository;
 
     @Override
     public MemoireDto create(CreateMemoireDto dto) {
-        User auteur = userRepository.findById(dto.getAuteurId())
+        Utilisateur auteur = utilisateurRepository.findById(dto.getAuteurId())
                 .orElseThrow(() -> new RuntimeException("Auteur introuvable"));
 
         Memoire memoire = new Memoire();
@@ -57,9 +57,9 @@ public class MemoireServiceImpl implements MemoireService {
 
     @Override
     public List<MemoireDto> findByAuteur(Long userId) {
-        User user = userRepository.findById(userId)
+        Utilisateur utilisateur = utilisateurRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Auteur introuvable"));
-        return memoireRepository.findByAuteur(user).stream()
+        return memoireRepository.findByAuteur(utilisateur).stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }

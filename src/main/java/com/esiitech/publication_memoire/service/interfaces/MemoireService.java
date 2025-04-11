@@ -1,4 +1,4 @@
-package com.esiitech.publication_memoire.services;
+package com.esiitech.publication_memoire.service.interfaces;
 
 import com.esiitech.publication_memoire.dto.CreateMemoireDto;
 import com.esiitech.publication_memoire.dto.MemoireDto;
