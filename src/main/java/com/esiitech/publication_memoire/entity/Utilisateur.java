@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -28,6 +29,10 @@ public class Utilisateur {
 
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @OneToMany(mappedBy = "auteur")
+    private List<Memoire> memoires;
+
 
     private boolean actif = false;
     private boolean passwordCreated = false;
@@ -128,5 +133,14 @@ public class Utilisateur {
 
     public void setDateCreation(LocalDateTime dateCreation) {
         this.dateCreation = dateCreation;
+    }
+
+
+    public List<Memoire> getMemoires() {
+        return memoires;
+    }
+
+    public void setMemoires(List<Memoire> memoires) {
+        this.memoires = memoires;
     }
 }

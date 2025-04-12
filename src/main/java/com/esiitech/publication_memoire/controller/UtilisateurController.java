@@ -1,10 +1,13 @@
 package com.esiitech.publication_memoire.controller;
 
 import com.esiitech.publication_memoire.dto.ActivationRequest;
+import com.esiitech.publication_memoire.dto.ChangePasswordRequest;
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
 import com.esiitech.publication_memoire.service.implementations.UtilisateurService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -60,5 +63,12 @@ public class UtilisateurController {
         return ResponseEntity.ok("Mot de passe créé et compte activé avec succès !");
     }
 
+    @PutMapping("/changer-mot-de-passe")
+    public ResponseEntity<?> changerMotDePasse(@RequestBody ChangePasswordRequest request,
+                                               @AuthenticationPrincipal UserDetails userDetails) {
+        Utilisateur utilisateur = utilisateurRepository.findByEmail(userDetails.getUsername()).orElse(null);
+        if (utilisateur == null) return ResponseEntity.status(404).body("Utilisateur non trouvé.");
+        return utilisateurService.changerMotDePasse(utilisateur, request);
+    }
 
 }

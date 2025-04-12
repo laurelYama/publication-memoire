@@ -1,11 +1,16 @@
 package com.esiitech.publication_memoire.service.implementations;
 
+import com.esiitech.publication_memoire.dto.ChangePasswordRequest;
+import com.esiitech.publication_memoire.dto.ResetPasswordRequest;
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.enums.Role;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.Random;
 
@@ -13,11 +18,13 @@ import java.util.Random;
 public class UtilisateurService {
 
     private final UtilisateurRepository utilisateurRepository;
+    private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
-    public UtilisateurService(UtilisateurRepository utilisateurRepository, EmailService emailService) {
+    public UtilisateurService(UtilisateurRepository utilisateurRepository, EmailService emailService, PasswordEncoder passwordEncoder) {
         this.utilisateurRepository = utilisateurRepository;
         this.emailService = emailService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // Génération d'un mot de passe temporaire
@@ -62,5 +69,65 @@ public class UtilisateurService {
 
         return utilisateur;
     }
+
+
+    public ResponseEntity<?> changerMotDePasse(Utilisateur utilisateur, ChangePasswordRequest request) {
+        if (!passwordEncoder.matches(request.getAncienMotDePasse(), utilisateur.getMotDePasse())) {
+            return ResponseEntity.badRequest().body("Ancien mot de passe incorrect.");
+        }
+
+        if (!request.getNouveauMotDePasse().equals(request.getConfirmationMotDePasse())) {
+            return ResponseEntity.badRequest().body("Les mots de passe ne correspondent pas.");
+        }
+
+        utilisateur.setMotDePasse(passwordEncoder.encode(request.getNouveauMotDePasse()));
+        utilisateurRepository.save(utilisateur);
+
+        return ResponseEntity.ok("Mot de passe mis à jour avec succès.");
+    }
+
+    public ResponseEntity<?> envoyerLienDeReinitialisation(String email) {
+        Optional<Utilisateur> utilisateurOpt = utilisateurRepository.findByEmail(email);
+        if (utilisateurOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Email non trouvé.");
+        }
+
+        Utilisateur utilisateur = utilisateurOpt.get();
+        String token = UUID.randomUUID().toString();
+        utilisateur.setActivationToken(token);
+        utilisateur.setTokenExpiration(LocalDateTime.now().plusHours(1));
+        utilisateurRepository.save(utilisateur);
+
+        String lien = "http://localhost:8080/api/auth/reinitialiser-mot-de-passe/" + token;
+        emailService.sendEmail(utilisateur.getEmail(), "Réinitialisation de mot de passe", "Clique ici : " + lien);
+
+        return ResponseEntity.ok("Email envoyé.");
+    }
+
+    public ResponseEntity<?> reinitialiserMotDePasse(String token, ResetPasswordRequest request) {
+        Optional<Utilisateur> utilisateurOpt = utilisateurRepository.findByActivationToken(token);
+        if (utilisateurOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Lien invalide.");
+        }
+
+        Utilisateur utilisateur = utilisateurOpt.get();
+        if (utilisateur.getTokenExpiration().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.badRequest().body("Lien expiré.");
+        }
+
+        if (!request.getNouveauMotDePasse().equals(request.getConfirmationMotDePasse())) {
+            return ResponseEntity.badRequest().body("Les mots de passe ne correspondent pas.");
+        }
+
+        utilisateur.setMotDePasse(passwordEncoder.encode(request.getNouveauMotDePasse()));
+        utilisateur.setActivationToken(null);
+        utilisateur.setTokenExpiration(null);
+        utilisateur.setActif(true);
+        utilisateur.setPasswordCreated(true);
+        utilisateurRepository.save(utilisateur);
+
+        return ResponseEntity.ok("Mot de passe réinitialisé.");
+    }
+
 
 }

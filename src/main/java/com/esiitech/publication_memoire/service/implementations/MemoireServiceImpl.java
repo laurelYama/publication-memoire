@@ -9,7 +9,9 @@ import com.esiitech.publication_memoire.repository.MemoireRepository;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
 import com.esiitech.publication_memoire.service.interfaces.MemoireService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,7 +28,7 @@ public class MemoireServiceImpl implements MemoireService {
     @Override
     public MemoireDto create(CreateMemoireDto dto) {
         Utilisateur auteur = utilisateurRepository.findById(dto.getAuteurId())
-                .orElseThrow(() -> new RuntimeException("Auteur introuvable"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Auteur introuvable"));
 
         Memoire memoire = new Memoire();
         memoire.setTitre(dto.getTitre());
@@ -40,6 +42,7 @@ public class MemoireServiceImpl implements MemoireService {
 
         return toDto(saved);
     }
+
 
     @Override
     public List<MemoireDto> findAll() {
