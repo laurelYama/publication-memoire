@@ -4,6 +4,8 @@ import com.esiitech.publication_memoire.dto.ForgotPasswordRequest;
 import com.esiitech.publication_memoire.dto.LoginRequest;
 import com.esiitech.publication_memoire.config.JwtService;
 import com.esiitech.publication_memoire.dto.ResetPasswordRequest;
+import com.esiitech.publication_memoire.dto.UtilisateurDTO;
+import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.service.implementations.CustomUserDetailsService;
 import com.esiitech.publication_memoire.service.implementations.UtilisateurService;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -40,6 +42,11 @@ public class AuthController {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getMotDePasse())
             );
+            Utilisateur utilisateur = utilisateurService.getByEmail(loginRequest.getEmail());
+
+            if (!utilisateur.isActif()) {
+                return ResponseEntity.status(403).body(Map.of("message", "Compte désactivé."));
+            }
 
             // Charger l'utilisateur et générer le token
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(loginRequest.getEmail());
@@ -65,5 +72,26 @@ public class AuthController {
                                                      @RequestBody ResetPasswordRequest request) {
         return utilisateurService.reinitialiserMotDePasse(token, request);
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMonProfil(@RequestHeader("Authorization") String authorizationHeader) {
+        try {
+            String token = authorizationHeader.replace("Bearer ", "");
+            String email = jwtService.extraireNomUtilisateur(token);
+
+            Utilisateur utilisateur = utilisateurService.getByEmail(email);
+
+            UtilisateurDTO dto = new UtilisateurDTO();
+            dto.setNom(utilisateur.getNom());
+            dto.setPrenom(utilisateur.getPrenom());
+            dto.setEmail(utilisateur.getEmail());
+            dto.setRole(utilisateur.getRole().name());
+
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body(Map.of("message", "Token invalide ou expiré."));
+        }
+    }
+
 
 }

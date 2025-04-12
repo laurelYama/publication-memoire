@@ -72,4 +72,10 @@ public class JwtService {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
+
+    public String extraireEmail(String token) {
+        return extraireNomUtilisateur(token);
+    }
+
 }

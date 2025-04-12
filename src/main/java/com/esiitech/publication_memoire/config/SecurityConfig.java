@@ -39,6 +39,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/validations/**").hasAnyRole("LECTEUR", "ADMIN")
                         .requestMatchers("/api/memoires/**").authenticated()
                         .requestMatchers("/api/utilisateurs/changer-mot-de-passe").authenticated()
+                        .requestMatchers("/api/auth/me").authenticated()
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(fournisseurAuthentification())

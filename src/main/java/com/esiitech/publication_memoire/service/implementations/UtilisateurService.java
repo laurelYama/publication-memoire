@@ -1,5 +1,6 @@
 package com.esiitech.publication_memoire.service.implementations;
 
+import com.esiitech.publication_memoire.config.JwtService;
 import com.esiitech.publication_memoire.dto.ChangePasswordRequest;
 import com.esiitech.publication_memoire.dto.ResetPasswordRequest;
 import com.esiitech.publication_memoire.entity.Utilisateur;
@@ -10,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.Random;
@@ -20,11 +22,13 @@ public class UtilisateurService {
     private final UtilisateurRepository utilisateurRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final JwtService jwtService;
 
-    public UtilisateurService(UtilisateurRepository utilisateurRepository, EmailService emailService, PasswordEncoder passwordEncoder) {
+    public UtilisateurService(UtilisateurRepository utilisateurRepository, EmailService emailService, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.utilisateurRepository = utilisateurRepository;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     // Génération d'un mot de passe temporaire
@@ -128,6 +132,34 @@ public class UtilisateurService {
 
         return ResponseEntity.ok("Mot de passe réinitialisé.");
     }
+
+
+    public ResponseEntity<?> activerUtilisateur(Long id, boolean actif) {
+        Optional<Utilisateur> opt = utilisateurRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Utilisateur non trouvé");
+        }
+
+        Utilisateur utilisateur = opt.get();
+        utilisateur.setActif(actif);
+        utilisateurRepository.save(utilisateur);
+
+        String message = actif ? "Utilisateur activé" : "Utilisateur désactivé";
+        return ResponseEntity.ok(Map.of("status", "success", "message", message));
+    }
+
+    public Utilisateur getUtilisateurDepuisToken(String token) {
+        String email = jwtService.extraireEmail(token);
+        return getByEmail(email);
+    }
+
+
+    public Utilisateur getByEmail(String email) {
+        return utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+    }
+
+
 
 
 }

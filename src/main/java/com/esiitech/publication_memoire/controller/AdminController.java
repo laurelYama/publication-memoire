@@ -57,6 +57,16 @@ public class AdminController {
         return ResponseEntity.ok(roles);
     }
 
+    @PutMapping("/utilisateur/{id}/activer")
+    public ResponseEntity<?> activerUtilisateur(@PathVariable Long id) {
+        return utilisateurService.activerUtilisateur(id, true);
+    }
+
+    @PutMapping("/utilisateur/{id}/desactiver")
+    public ResponseEntity<?> desactiverUtilisateur(@PathVariable Long id) {
+        return utilisateurService.activerUtilisateur(id, false);
+    }
+
 
 
 }
