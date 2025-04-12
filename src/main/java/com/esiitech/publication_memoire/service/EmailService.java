@@ -1,4 +1,4 @@
-package com.esiitech.publication_memoire.service.implementations;
+package com.esiitech.publication_memoire.service;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;

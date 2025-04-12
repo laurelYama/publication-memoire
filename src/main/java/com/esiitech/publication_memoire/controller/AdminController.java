@@ -4,7 +4,7 @@ import com.esiitech.publication_memoire.dto.UtilisateurDTO;
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.enums.Role;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
-import com.esiitech.publication_memoire.service.implementations.UtilisateurService;
+import com.esiitech.publication_memoire.service.UtilisateurService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

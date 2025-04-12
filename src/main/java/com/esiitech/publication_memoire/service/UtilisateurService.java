@@ -1,4 +1,4 @@
-package com.esiitech.publication_memoire.service.implementations;
+package com.esiitech.publication_memoire.service;
 
 import com.esiitech.publication_memoire.config.JwtService;
 import com.esiitech.publication_memoire.dto.ChangePasswordRequest;

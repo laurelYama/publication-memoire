@@ -1,4 +1,5 @@
 package com.esiitech.publication_memoire.entity;
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -7,8 +8,9 @@ import jakarta.persistence.*;
 
 import java.util.List;
 
-@Entity
+
 @Table(name = "memoires")
+@Entity
 public class Memoire {
 
     @Id
@@ -16,48 +18,126 @@ public class Memoire {
     private Long id;
 
     private String titre;
-    private String resume;
-    private String annee;
-    private String fichier;
+
+    private String description;
+
+    private String fichierWord;  // chemin du fichier Word
+    private String fichierPdf;   // généré après validation
 
     @Enumerated(EnumType.STRING)
-    private StatutMemoire statut; // EN_ATTENTE, VALIDE, REFUSE
+    private StatutMemoire statut = StatutMemoire.EN_ATTENTE;
+
+    private boolean estPublic = true;
+
+    private LocalDateTime dateSoumission = LocalDateTime.now();
 
     @ManyToOne
-    @JoinColumn(name = "auteur_id")
-    private Utilisateur auteur;
+    @JoinColumn(name = "etudiant_id")
+    private Utilisateur etudiant;
 
-    @OneToMany(mappedBy = "memoire", cascade = CascadeType.ALL)
-    private List<Validation> validations;
+    @ManyToOne
+    @JoinColumn(name = "lecteur_id")
+    private Utilisateur lecteur;
 
-    // Getters & Setters
+    @Column(length = 2000)
+    private String commentaire;
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    private LocalDateTime dateDepot = LocalDateTime.now();
 
-    public String getTitre() { return titre; }
-    public void setTitre(String titre) { this.titre = titre; }
 
-    public String getResume() { return resume; }
-    public void setResume(String resume) { this.resume = resume; }
-
-    public String getAnnee() { return annee; }
-    public void setAnnee(String annee) { this.annee = annee; }
-
-    public String getFichier() { return fichier; }
-    public void setFichier(String fichier) { this.fichier = fichier; }
-
-    public StatutMemoire getStatut() { return statut; }
-    public void setStatut(StatutMemoire statut) { this.statut = statut; }
-
-    public Utilisateur getAuteur() {
-        return auteur;
+    public Long getId() {
+        return id;
     }
 
-    public void setAuteur(Utilisateur auteur) {
-        this.auteur = auteur;
+    public void setId(Long id) {
+        this.id = id;
     }
 
-    public List<Validation> getValidations() { return validations; }
-    public void setValidations(List<Validation> validations) { this.validations = validations; }
+    public String getTitre() {
+        return titre;
+    }
+
+    public void setTitre(String titre) {
+        this.titre = titre;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getFichierWord() {
+        return fichierWord;
+    }
+
+    public void setFichierWord(String fichierWord) {
+        this.fichierWord = fichierWord;
+    }
+
+    public String getFichierPdf() {
+        return fichierPdf;
+    }
+
+    public void setFichierPdf(String fichierPdf) {
+        this.fichierPdf = fichierPdf;
+    }
+
+    public StatutMemoire getStatut() {
+        return statut;
+    }
+
+    public void setStatut(StatutMemoire statut) {
+        this.statut = statut;
+    }
+
+    public boolean isEstPublic() {
+        return estPublic;
+    }
+
+    public void setEstPublic(boolean estPublic) {
+        this.estPublic = estPublic;
+    }
+
+    public LocalDateTime getDateSoumission() {
+        return dateSoumission;
+    }
+
+    public void setDateSoumission(LocalDateTime dateSoumission) {
+        this.dateSoumission = dateSoumission;
+    }
+
+    public Utilisateur getEtudiant() {
+        return etudiant;
+    }
+
+    public void setEtudiant(Utilisateur etudiant) {
+        this.etudiant = etudiant;
+    }
+
+    public Utilisateur getLecteur() {
+        return lecteur;
+    }
+
+    public void setLecteur(Utilisateur lecteur) {
+        this.lecteur = lecteur;
+    }
+
+    public String getCommentaire() {
+        return commentaire;
+    }
+
+    public void setCommentaire(String commentaire) {
+        this.commentaire = commentaire;
+    }
+
+    public LocalDateTime getDateDepot() {
+        return dateDepot;
+    }
+
+    public void setDateDepot(LocalDateTime dateDepot) {
+        this.dateDepot = dateDepot;
+    }
 }

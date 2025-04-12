@@ -1,6 +1,6 @@
 package com.esiitech.publication_memoire.config;
 
-import com.esiitech.publication_memoire.service.implementations.CustomUserDetailsService;
+import com.esiitech.publication_memoire.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -37,7 +37,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/utilisateurs/**").permitAll()
                         .requestMatchers("/api/validations/**").hasAnyRole("LECTEUR", "ADMIN")
-                        .requestMatchers("/api/memoires/**").authenticated()
+                        .requestMatchers("/api/memoires/**").permitAll()
                         .requestMatchers("/api/utilisateurs/changer-mot-de-passe").authenticated()
                         .requestMatchers("/api/auth/me").authenticated()
                         .anyRequest().authenticated()

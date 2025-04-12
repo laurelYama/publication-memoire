@@ -4,7 +4,7 @@ import com.esiitech.publication_memoire.dto.ActivationRequest;
 import com.esiitech.publication_memoire.dto.ChangePasswordRequest;
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
-import com.esiitech.publication_memoire.service.implementations.UtilisateurService;
+import com.esiitech.publication_memoire.service.UtilisateurService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;

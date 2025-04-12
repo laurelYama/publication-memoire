@@ -1,6 +1,7 @@
 package com.esiitech.publication_memoire.entity;
 
 import com.esiitech.publication_memoire.enums.Role;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -29,8 +30,8 @@ public class Utilisateur {
 
     @Enumerated(EnumType.STRING)
     private Role role;
-
-    @OneToMany(mappedBy = "auteur")
+    @JsonIgnore
+    @OneToMany(mappedBy = "etudiant")
     private List<Memoire> memoires;
 
 
