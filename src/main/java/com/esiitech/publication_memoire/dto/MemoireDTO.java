@@ -7,7 +7,7 @@ public class MemoireDTO {
         private String titre;
         private String description;
         private String fichierWord;
-        private String urlPdf;
+        private String fichierPdf;
         private String statut;
         private boolean estPublic;
         private LocalDateTime dateSoumission;
@@ -49,12 +49,12 @@ public class MemoireDTO {
         this.fichierWord = fichierWord;
     }
 
-    public String getUrlPdf() {
-        return urlPdf;
+    public String getFichierPdf() {
+        return fichierPdf;
     }
 
-    public void setUrlPdf(String urlPdf) {
-        this.urlPdf = urlPdf;
+    public void setFichierPdf(String fichierPdf) {
+        this.fichierPdf = fichierPdf;
     }
 
     public String getStatut() {

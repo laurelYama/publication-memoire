@@ -18,11 +18,11 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Retourne les rôles de l'utilisateur sous forme de GrantedAuthority
         return Collections.singletonList(
-                new SimpleGrantedAuthority(utilisateur.getRole().name())
+                new SimpleGrantedAuthority("ROLE_" + utilisateur.getRole().name())
         );
     }
+
 
     @Override
     public String getPassword() {

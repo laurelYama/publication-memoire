@@ -12,6 +12,8 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     Optional<Utilisateur> findByActivationToken(String token);
     boolean existsByEmail(String email);
     List<Utilisateur> findByRole(Role role);
+    Optional<Utilisateur> findFirstByRoleOrderByIdAsc(Role role);
+
 
 }
 

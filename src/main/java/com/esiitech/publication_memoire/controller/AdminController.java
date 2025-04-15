@@ -1,13 +1,17 @@
 package com.esiitech.publication_memoire.controller;
 
+import com.esiitech.publication_memoire.dto.MemoireDTO;
 import com.esiitech.publication_memoire.dto.UtilisateurDTO;
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.enums.Role;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
+import com.esiitech.publication_memoire.service.MemoireService;
 import com.esiitech.publication_memoire.service.UtilisateurService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -19,12 +23,18 @@ public class AdminController {
 
     private final UtilisateurService utilisateurService;
     private final UtilisateurRepository utilisateurRepository;
+    private final MemoireService memoireService;
 
-    public AdminController(UtilisateurService utilisateurService, UtilisateurRepository utilisateurRepository) {
+
+    public AdminController(UtilisateurService utilisateurService,
+                           UtilisateurRepository utilisateurRepository,
+                           MemoireService memoireService) {
         this.utilisateurService = utilisateurService;
         this.utilisateurRepository = utilisateurRepository;
+        this.memoireService = memoireService;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/utilisateurs")
     public ResponseEntity<?> ajouterUtilisateur(@RequestBody UtilisateurDTO request) {
         if (request.getNom() == null || request.getPrenom() == null || request.getEmail() == null || request.getRole() == null) {
@@ -48,7 +58,7 @@ public class AdminController {
         }
     }
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/roles")
     public ResponseEntity<List<String>> getRoles() {
         List<String> roles = Arrays.stream(Role.values())
@@ -57,14 +67,36 @@ public class AdminController {
         return ResponseEntity.ok(roles);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/utilisateur/{id}/activer")
     public ResponseEntity<?> activerUtilisateur(@PathVariable Long id) {
         return utilisateurService.activerUtilisateur(id, true);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/utilisateur/{id}/desactiver")
     public ResponseEntity<?> desactiverUtilisateur(@PathVariable Long id) {
         return utilisateurService.activerUtilisateur(id, false);
+    }
+
+    @GetMapping("/lecteurs")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UtilisateurDTO>> getLecteurs() {
+        List<UtilisateurDTO> lecteurs = utilisateurService.recupererLecteurs();
+        return ResponseEntity.ok(lecteurs);
+    }
+
+    @PutMapping("/assigner-lecteur")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<MemoireDTO> assignerLecteur(
+            @RequestParam Long memoireId,
+            @RequestParam Long lecteurId,
+            Principal principal) {
+
+        Utilisateur admin = utilisateurService.getByEmail(principal.getName());
+        MemoireDTO memoireDTO = memoireService.assignerLecteur(memoireId, lecteurId, admin.getId());
+
+        return ResponseEntity.ok(memoireDTO);
     }
 
 

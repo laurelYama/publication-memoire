@@ -11,6 +11,7 @@ import com.esiitech.publication_memoire.service.UtilisateurService;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -74,12 +75,9 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMonProfil(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<?> getMonProfil(@AuthenticationPrincipal UserDetails userDetails) {
         try {
-            String token = authorizationHeader.replace("Bearer ", "");
-            String email = jwtService.extraireNomUtilisateur(token);
-
-            Utilisateur utilisateur = utilisateurService.getByEmail(email);
+            Utilisateur utilisateur = utilisateurService.getByEmail(userDetails.getUsername());
 
             UtilisateurDTO dto = new UtilisateurDTO();
             dto.setNom(utilisateur.getNom());
@@ -92,6 +90,7 @@ public class AuthController {
             return ResponseEntity.status(401).body(Map.of("message", "Token invalide ou expiré."));
         }
     }
+
 
 
 }

@@ -31,9 +31,16 @@ public class Memoire {
 
     private LocalDateTime dateSoumission = LocalDateTime.now();
 
+    private String fichierCorrige;
+
+
     @ManyToOne
     @JoinColumn(name = "etudiant_id")
     private Utilisateur etudiant;
+
+    @Column(name = "transmis_a_admin")
+    private boolean transmisAAdmin = false;
+
 
     @ManyToOne
     @JoinColumn(name = "lecteur_id")
@@ -42,8 +49,6 @@ public class Memoire {
     @Column(length = 2000)
     private String commentaire;
 
-    private LocalDateTime dateDepot = LocalDateTime.now();
-
 
     public Long getId() {
         return id;
@@ -51,6 +56,14 @@ public class Memoire {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getFichierCorrige() {
+        return fichierCorrige;
+    }
+
+    public void setFichierCorrige(String fichierCorrige) {
+        this.fichierCorrige = fichierCorrige;
     }
 
     public String getTitre() {
@@ -133,11 +146,12 @@ public class Memoire {
         this.commentaire = commentaire;
     }
 
-    public LocalDateTime getDateDepot() {
-        return dateDepot;
+
+    public boolean isTransmisAAdmin() {
+        return transmisAAdmin;
     }
 
-    public void setDateDepot(LocalDateTime dateDepot) {
-        this.dateDepot = dateDepot;
+    public void setTransmisAAdmin(boolean transmisAAdmin) {
+        this.transmisAAdmin = transmisAAdmin;
     }
 }
