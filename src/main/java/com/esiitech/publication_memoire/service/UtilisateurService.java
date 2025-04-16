@@ -145,7 +145,7 @@ public class UtilisateurService {
         utilisateurRepository.save(utilisateur);
 
         String lien = "http://localhost:8080/api/auth/reinitialiser-mot-de-passe/" + token;
-        emailService.sendEmail(utilisateur.getEmail(), "Réinitialisation de mot de passe", "Clique ici : " + lien);
+        emailService.sendEmailAsync(utilisateur.getEmail(), "Réinitialisation de mot de passe", "Clique ici : " + lien);
 
         return ResponseEntity.ok("Email envoyé.");
     }

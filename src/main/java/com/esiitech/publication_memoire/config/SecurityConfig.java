@@ -59,7 +59,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/memoires/lecteur/transmettre").hasRole("LECTEUR")
                         .requestMatchers("/api/memoires/{id}/telecharger").authenticated()
                         .requestMatchers("/api/memoires/{id}/telecharger/pdf").authenticated()
-                        .requestMatchers("/api/memoires/{id}/preview/pdf").permitAll()
+                        .requestMatchers("/api/memoires/public/**").permitAll()
+                        .requestMatchers("/api/memoires/recherche/**").authenticated()
+                        .requestMatchers("/api/memoires/{id}/pdf").permitAll()
 
                         .requestMatchers("/api/memoires/{id}").authenticated()
 

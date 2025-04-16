@@ -2,11 +2,16 @@ package com.esiitech.publication_memoire.controller;
 
 import com.esiitech.publication_memoire.dto.MemoireDTO;
 import com.esiitech.publication_memoire.dto.UtilisateurDTO;
+import com.esiitech.publication_memoire.entity.Memoire;
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.enums.Role;
+import com.esiitech.publication_memoire.enums.StatutMemoire;
+import com.esiitech.publication_memoire.mapper.MemoireMapper;
+import com.esiitech.publication_memoire.repository.MemoireRepository;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
 import com.esiitech.publication_memoire.service.MemoireService;
 import com.esiitech.publication_memoire.service.UtilisateurService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -24,14 +29,20 @@ public class AdminController {
     private final UtilisateurService utilisateurService;
     private final UtilisateurRepository utilisateurRepository;
     private final MemoireService memoireService;
+    private final MemoireRepository memoireRepository;
+    private final MemoireMapper memoireMapper;
 
 
     public AdminController(UtilisateurService utilisateurService,
                            UtilisateurRepository utilisateurRepository,
-                           MemoireService memoireService) {
+                           MemoireService memoireService,
+                           MemoireRepository memoireRepository,
+                           MemoireMapper memoireMapper) {
         this.utilisateurService = utilisateurService;
         this.utilisateurRepository = utilisateurRepository;
         this.memoireService = memoireService;
+        this.memoireRepository =memoireRepository;
+        this.memoireMapper = memoireMapper;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -98,6 +109,25 @@ public class AdminController {
 
         return ResponseEntity.ok(memoireDTO);
     }
+
+    @GetMapping("/recherche/tous")
+    public List<MemoireDTO> rechercherTousLesMemoires(
+            @RequestParam(required = false) String titre,
+            @RequestParam(required = false) String nom,
+            @RequestParam(required = false) String prenom,
+            @RequestParam(required = false) StatutMemoire statut,
+            @RequestParam(required = false) Boolean estPublic
+    ) {
+        List<Memoire> memoires = memoireRepository.rechercheFlexible(titre, nom, prenom, statut, estPublic);
+        return memoireMapper.toDtoList(memoires);
+    }
+
+
+
+
+
+
+
 
 
 

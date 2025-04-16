@@ -6,8 +6,10 @@ import com.esiitech.publication_memoire.dto.TransmissionLecteurRequest;
 import com.esiitech.publication_memoire.entity.Memoire;
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.enums.StatutMemoire;
+import com.esiitech.publication_memoire.exception.MemoireNotFoundException;
 import com.esiitech.publication_memoire.mapper.MemoireMapper;
 import com.esiitech.publication_memoire.repository.MemoireRepository;
+import com.esiitech.publication_memoire.service.FileStorageService;
 import com.esiitech.publication_memoire.service.MemoireService;
 import com.esiitech.publication_memoire.service.UtilisateurService;
 import jakarta.validation.Valid;
@@ -17,9 +19,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -37,15 +36,18 @@ public class MemoireController {
     private final MemoireRepository memoireRepository;
     private final MemoireMapper memoireMapper;
     private final UtilisateurService utilisateurService;
+    private final FileStorageService fileStorageService;
 
     public MemoireController(MemoireService memoireService,
                              MemoireRepository memoireRepository,
                              MemoireMapper memoireMapper,
-                             UtilisateurService utilisateurService) {
+                             UtilisateurService utilisateurService,
+                             FileStorageService fileStorageService) {
         this.memoireService = memoireService;
         this.memoireRepository = memoireRepository;
         this.memoireMapper = memoireMapper;
         this.utilisateurService = utilisateurService;
+        this.fileStorageService =fileStorageService;
     }
 
     /**
@@ -106,31 +108,38 @@ public class MemoireController {
         return memoireService.telechargerFichierOriginal(id);
     }
 
-    /**
-     * Afficher le mémoire en PDF directement dans le navigateur.
-     */
-    @PreAuthorize("isAuthenticated()")
-    @GetMapping("/{id}/preview/pdf")
-    public ResponseEntity<Resource> previewPdf(@PathVariable Long id) throws IOException {
-        Resource resource = memoireService.telechargerMemoirePdf(id);
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<Resource> telechargerOuAfficherMemoirePdf(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "download") String mode) {
+
+        // Récupérer le mémoire
+        Memoire memoire = memoireRepository.findById(id)
+                .orElseThrow(() -> new MemoireNotFoundException(id));
+
+        // Vérifier qu'il est validé
+        if (memoire.getStatut() != StatutMemoire.VALIDE || memoire.getFichierPdf() == null) {
+            throw new IllegalStateException("Le mémoire n’est pas encore publié.");
+        }
+
+        // Charger le fichier
+        Resource resource = fileStorageService.chargerFichier(memoire.getFichierPdf());
+
+        // Définir le nom du fichier propre
+        String nomFichier = memoire.getTitre().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf";
+
+        // Définir l'en-tête selon le mode
+        String disposition = mode.equalsIgnoreCase("inline")
+                ? "inline"
+                : "attachment";
+
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + nomFichier + "\"")
                 .body(resource);
     }
 
-    /**
-     * Télécharger le PDF du mémoire corrigé ou validé.
-     */
-    @PreAuthorize("isAuthenticated()")
-    @GetMapping("/{id}/telecharger/pdf")
-    public ResponseEntity<Resource> downloadPdf(@PathVariable Long id) throws IOException {
-        Resource resource = memoireService.telechargerMemoirePdf(id);
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
-    }
 
     /**
      * Valider un mémoire (ADMIN).
@@ -168,54 +177,6 @@ public class MemoireController {
     }
 
     /**
-     * Rechercher des mémoires par titre (accessibilité selon le rôle).
-     */
-    @GetMapping("/recherche")
-    public ResponseEntity<List<MemoireDTO>> rechercheMemoire(@RequestParam(required = false) String titre,
-                                                             Authentication authentication) {
-        List<Memoire> memoires;
-
-        boolean isAdmin = false;
-        boolean isEtudiant = false;
-
-        if (authentication != null) {
-            isAdmin = authentication.getAuthorities().stream()
-                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
-            isEtudiant = authentication.getAuthorities().stream()
-                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ETUDIANT"));
-        }
-
-        if (isAdmin) {
-            memoires = memoireRepository.findByTitre(titre);
-        } else if (isEtudiant) {
-            memoires = memoireRepository.findByStatutAndTitreContainingIgnoreCase(StatutMemoire.VALIDE, titre);
-        } else {
-            memoires = memoireRepository.findByStatutAndEstPublicAndTitreContainingIgnoreCase(
-                    StatutMemoire.VALIDE, true, titre);
-        }
-
-        List<MemoireDTO> dtos = memoires.stream()
-                .map(memoireMapper::toDto)
-                .toList();
-
-        return ResponseEntity.ok(dtos);
-    }
-
-    /**
-     * Rechercher des mémoires par nom ou prénom de l'étudiant.
-     */
-    @GetMapping("/recherche-etudiant")
-    public ResponseEntity<List<MemoireDTO>> chercherParNomPrenomEtudiant(@RequestParam String motCle,
-                                                                         @AuthenticationPrincipal UserDetails userDetails) {
-        List<Memoire> memoires = memoireService.chercherParNomOuPrenom(motCle, userDetails);
-        List<MemoireDTO> dtos = memoires.stream()
-                .map(memoireMapper::toDto)
-                .toList();
-
-        return ResponseEntity.ok(dtos);
-    }
-
-    /**
      * Obtenir les statistiques des mémoires selon le rôle.
      */
     @PreAuthorize("isAuthenticated()")
@@ -240,6 +201,39 @@ public class MemoireController {
         MemoireDTO dto = memoireService.getMemoireById(id);
         return ResponseEntity.ok(dto);
     }
+
+
+    /**
+     *  recherche des etudiant non connecter
+     */
+
+    @GetMapping("/public/recherche")
+    public List<MemoireDTO> rechercherMemoiresPublics(
+            @RequestParam(required = false) String titre,
+            @RequestParam(required = false) String nom,
+            @RequestParam(required = false) String prenom
+    ) {
+        List<Memoire> memoires = memoireService.chercherMemoiresPublics(titre, nom, prenom);
+        return memoireMapper.toDtoList(memoires);
+    }
+
+    /**
+     *recherche des etudiants connecter
+     */
+
+    @GetMapping("/recherche")
+    public List<MemoireDTO> rechercherMemoires(
+            @RequestParam(required = false) String titre,
+            @RequestParam(required = false) String nom,
+            @RequestParam(required = false) String prenom
+    ) {
+        List<Memoire> memoires = memoireRepository.rechercherMemoiresValides(titre, nom, prenom);
+        return memoireMapper.toDtoList(memoires);
+    }
+
+
+
+
 
 
 }

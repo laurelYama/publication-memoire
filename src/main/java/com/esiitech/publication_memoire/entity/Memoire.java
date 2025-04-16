@@ -4,6 +4,7 @@ import java.util.List;
 
 
 import com.esiitech.publication_memoire.enums.StatutMemoire;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.util.List;
@@ -35,11 +36,12 @@ public class Memoire {
 
 
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "etudiant_id")
     private Utilisateur etudiant;
 
     @Column(name = "transmis_a_admin")
-    private boolean transmisAAdmin = false;
+    private Boolean transmisAAdmin = false;
 
 
     @ManyToOne

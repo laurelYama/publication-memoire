@@ -2,6 +2,7 @@ package com.esiitech.publication_memoire.service;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,13 +14,15 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    public void sendEmail(String to, String subject, String text) {
+    @Async
+    public void sendEmailAsync(String to, String subject, String content) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
         message.setSubject(subject);
-        message.setText(text);
+        message.setText(content);
         mailSender.send(message);
     }
+
 
     // Envoi d'un email d'activation avec rôle dynamique
     public void sendActivationEmail(String to, String activationToken, String nom, String prenom, String role) {
@@ -41,7 +44,10 @@ public class EmailService {
             L'équipe de la plateforme.
             """.formatted(prenom, nom.toUpperCase(), role.toUpperCase(), activationLink);
 
-        sendEmail(to, subject, body);
+        sendEmailAsync(to, subject, body);
     }
+
+
+
 
 }
