@@ -19,6 +19,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -393,5 +394,54 @@ public class MemoireService {
     public List<Memoire> chercherMemoiresPublics(String titre, String nom, String prenom) {
         return memoireRepository.rechercherMemoiresPublicsValides(titre, nom, prenom);
     }
+
+
+    public MemoireDTO reSoumettreMemoire(Long memoireId, MultipartFile fichier, Utilisateur etudiant) throws IOException {
+        Memoire memoire = memoireRepository.findById(memoireId)
+                .orElseThrow(() -> new MemoireNotFoundException(memoireId));
+
+        if (!memoire.getEtudiant().equals(etudiant)) {
+            throw new AccessDeniedException("Ce mémoire ne vous appartient pas.");
+        }
+
+        if (memoire.getStatut() != StatutMemoire.REJETE) {
+            throw new IllegalStateException("Seuls les mémoires rejetés peuvent être réenvoyés.");
+        }
+
+        if (fichier == null || fichier.isEmpty()) {
+            throw new IllegalArgumentException("Le fichier Word est requis.");
+        }
+
+        String contentType = fichier.getContentType();
+        List<String> WORD_MIME_TYPES = List.of(
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+                "application/msword" // .doc
+        );
+
+        if (!WORD_MIME_TYPES.contains(contentType)) {
+            throw new IllegalArgumentException("Le fichier doit être au format Word (.doc ou .docx).");
+        }
+
+        // ✅ Ici on stocke le chemin retourné
+        String chemin = fileStorageService.sauvegarderFichier(
+                fichier,
+                "memoires",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/msword"
+        );
+
+        // ✅ Puis on l’utilise ici
+        memoire.setFichierWord(chemin);
+        memoire.setStatut(StatutMemoire.EN_ATTENTE);
+        memoire.setTransmisAAdmin(false);
+
+        Memoire updated = memoireRepository.save(memoire);
+
+        historiqueActionService.enregistrerAction(etudiant, "Ré-soumission du mémoire rejeté", updated);
+
+        return memoireMapper.toDto(updated);
+    }
+
+
 
 }

@@ -10,6 +10,9 @@ import com.esiitech.publication_memoire.logging.Loggable;
 import com.esiitech.publication_memoire.mapper.UtilisateurMapper;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -240,5 +243,18 @@ public class UtilisateurService {
         List<Utilisateur> lecteurs = utilisateurRepository.findByRole(Role.LECTEUR);
         return utilisateurMapper.toDtoList(lecteurs);
     }
+
+    public Utilisateur getUtilisateurConnecte() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
+            throw new RuntimeException("Aucun utilisateur connecté.");
+        }
+
+        String email = authentication.getName(); // ou `getPrincipal()` si tu stockes un objet custom
+        return utilisateurRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé avec l’email : " + email));
+    }
+
 
 }

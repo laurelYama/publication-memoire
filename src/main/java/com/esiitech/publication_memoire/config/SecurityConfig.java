@@ -62,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/memoires/public/**").permitAll()
                         .requestMatchers("/api/memoires/recherche/**").authenticated()
                         .requestMatchers("/api/memoires/{id}/pdf").permitAll()
+                        .requestMatchers("/api/memoirese/tudiant/{id}/resoumettre").hasRole("ETUDIANT")
 
                         .requestMatchers("/api/memoires/{id}").authenticated()
 
