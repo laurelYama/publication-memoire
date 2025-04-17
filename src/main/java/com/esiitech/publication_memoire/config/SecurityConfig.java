@@ -65,6 +65,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/memoirese/tudiant/{id}/resoumettre").hasRole("ETUDIANT")
 
                         .requestMatchers("/api/memoires/{id}").authenticated()
+                        .requestMatchers("/api/types/**").hasRole("ADMIN")
 
                         .requestMatchers("/api/memoires/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/memoires/visibilite").hasRole("ADMIN")

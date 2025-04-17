@@ -66,10 +66,12 @@ public class MemoireController {
         // 🚀 Appel au service pour soumettre le mémoire
         MemoireDTO memoireDTO = memoireService.soumettreMemoire(
                 etudiant.getId(),
+                request.getTypeDocumentId(),
                 request.getTitre(),
                 request.getDescription(),
                 request.getFichierWord()
         );
+
 
         // Retour du DTO avec le statut HTTP 200 OK
         return ResponseEntity.ok(memoireDTO);
@@ -212,11 +214,15 @@ public class MemoireController {
     public List<MemoireDTO> rechercherMemoiresPublics(
             @RequestParam(required = false) String titre,
             @RequestParam(required = false) String nom,
-            @RequestParam(required = false) String prenom
+            @RequestParam(required = false) String prenom,
+            @RequestParam(required = false) Long typeDocumentId,
+            @RequestParam(required = false) String typeDocumentNom
     ) {
-        List<Memoire> memoires = memoireService.chercherMemoiresPublics(titre, nom, prenom);
+        List<Memoire> memoires = memoireService.chercherMemoiresPublics(titre, nom, prenom, typeDocumentId, typeDocumentNom);
         return memoireMapper.toDtoList(memoires);
     }
+
+
 
     /**
      *recherche des etudiants connecter
@@ -226,11 +232,15 @@ public class MemoireController {
     public List<MemoireDTO> rechercherMemoires(
             @RequestParam(required = false) String titre,
             @RequestParam(required = false) String nom,
-            @RequestParam(required = false) String prenom
+            @RequestParam(required = false) String prenom,
+            @RequestParam(required = false) Long typeDocumentId,
+            @RequestParam(required = false) String typeDocumentNom
     ) {
-        List<Memoire> memoires = memoireRepository.rechercherMemoiresValides(titre, nom, prenom);
+        List<Memoire> memoires = memoireRepository.rechercherMemoiresValides(titre, nom, prenom, typeDocumentId, typeDocumentNom);
         return memoireMapper.toDtoList(memoires);
     }
+
+
 
     @PreAuthorize("hasRole('ETUDIANT')")
     @PutMapping("/etudiant/{id}/resoumettre")

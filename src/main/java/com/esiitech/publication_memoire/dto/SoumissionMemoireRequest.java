@@ -20,14 +20,8 @@ public class SoumissionMemoireRequest {
     @NotNull
     private MultipartFile fichierWord;
 
-
-//    public @NotNull Long getEtudiantId() {
-//        return etudiantId;
-//    }
-//
-//    public void setEtudiantId(@NotNull Long etudiantId) {
-//        this.etudiantId = etudiantId;
-//    }
+    @NotNull
+    private Long typeDocumentId;
 
     public @NotBlank String getTitre() {
         return titre;
@@ -51,6 +45,14 @@ public class SoumissionMemoireRequest {
 
     public void setFichierWord(@NotNull MultipartFile fichierWord) {
         this.fichierWord = fichierWord;
+    }
+
+    public @NotNull Long getTypeDocumentId() {
+        return typeDocumentId;
+    }
+
+    public void setTypeDocumentId(@NotNull Long typeDocumentId) {
+        this.typeDocumentId = typeDocumentId;
     }
 }
 

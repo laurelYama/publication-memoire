@@ -2,6 +2,7 @@ package com.esiitech.publication_memoire.service;
 
 import com.esiitech.publication_memoire.dto.MemoireDTO;
 import com.esiitech.publication_memoire.entity.Memoire;
+import com.esiitech.publication_memoire.entity.TypeDocument;
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.enums.Role;
 import com.esiitech.publication_memoire.enums.StatutMemoire;
@@ -10,6 +11,7 @@ import com.esiitech.publication_memoire.exception.UtilisateurNotFoundException;
 import com.esiitech.publication_memoire.logging.Loggable;
 import com.esiitech.publication_memoire.mapper.MemoireMapper;
 import com.esiitech.publication_memoire.repository.MemoireRepository;
+import com.esiitech.publication_memoire.repository.TypeDocumentRepository;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
@@ -42,6 +44,7 @@ public class MemoireService {
     private final HistoriqueActionService historiqueActionService;
     private final FileStorageService fileStorageService;
     private final FileConversionService fileConversionService;
+    private final TypeDocumentRepository typeDocumentRepository;
 
     // Types MIME acceptés pour les documents Word
     private static final String[] WORD_MIME_TYPES = {
@@ -59,7 +62,8 @@ public class MemoireService {
             MemoireMapper memoireMapper,
             HistoriqueActionService historiqueActionService,
             FileStorageService fileStorageService,
-            FileConversionService fileConversionService) {
+            FileConversionService fileConversionService,
+            TypeDocumentRepository typeDocumentRepository) {
         this.memoireRepository = memoireRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.emailService = emailService;
@@ -67,6 +71,7 @@ public class MemoireService {
         this.historiqueActionService = historiqueActionService;
         this.fileStorageService = fileStorageService;
         this.fileConversionService = fileConversionService;
+        this.typeDocumentRepository = typeDocumentRepository;
     }
 
     /**
@@ -74,44 +79,51 @@ public class MemoireService {
      */
     @Loggable
     @Transactional
-    public MemoireDTO soumettreMemoire(Long etudiantId, String titre, String description, MultipartFile fichierWord) throws IOException {
+    public MemoireDTO soumettreMemoire(Long etudiantId, Long typeDocumentId, String titre, String description, MultipartFile fichierWord) throws IOException {
         // 1. Vérifie que l'étudiant existe
         Utilisateur etudiant = utilisateurRepository.findById(etudiantId)
                 .orElseThrow(() -> new UtilisateurNotFoundException(etudiantId));
 
-        // 2. Sauvegarde du fichier mémoire
+        // 2. Vérifie que le type de mémoire existe
+        TypeDocument typeDocument = typeDocumentRepository.findById(typeDocumentId)
+                .orElseThrow(() -> new RuntimeException("Type de mémoire non trouvé avec l'id : " + typeDocumentId));
+
+        // 3. Sauvegarde du fichier mémoire
         String cheminFichier = fileStorageService.sauvegarderFichier(fichierWord, "mémoires", WORD_MIME_TYPES);
 
-        // 3. Création du mémoire
+        // 4. Création du mémoire
         Memoire memoire = new Memoire();
         memoire.setTitre(titre);
         memoire.setDescription(description);
         memoire.setFichierWord(cheminFichier);
         memoire.setEtudiant(etudiant);
+        memoire.setType(typeDocument);
         memoire.setStatut(StatutMemoire.EN_ATTENTE);
 
-        // 4. Sauvegarde du mémoire
+        // 5. Sauvegarde du mémoire
         Memoire saved = memoireRepository.save(memoire);
 
-        // 5. Historique pour l'étudiant
+        // 6. Historique pour l'étudiant
         historiqueActionService.enregistrerAction(etudiant, "Soumission du mémoire", saved);
 
-        // 6. Récupération du premier admin
+        // 7. Récupération du premier admin
         Utilisateur admin = utilisateurRepository.findFirstByRoleOrderByIdAsc(Role.ADMIN)
                 .orElseThrow(() -> new UtilisateurNotFoundException("Aucun administrateur trouvé"));
 
-        // 7. Notification par mail à l'admin (envoi asynchrone)
+        // 8. Notification par mail à l'admin
         this.envoyerNotificationAdmin(saved, etudiant, admin);
 
-        // 8. Notification par mail à l'étudiant (envoi asynchrone)
+        // 9. Notification à l'étudiant
         this.envoyerConfirmationEtudiant(saved, etudiant);
 
-        // 9. Historique côté admin (notification reçue)
+        // 10. Historique côté admin
         historiqueActionService.enregistrerAction(admin, "Notification reçue : Soumission mémoire de " + etudiant.getNom(), saved);
 
         logger.info("Mémoire soumis avec succès : ID={}, Étudiant={}", saved.getId(), etudiant.getNom());
+
         return memoireMapper.toDto(saved);
     }
+
 
     private void envoyerNotificationAdmin(Memoire memoire, Utilisateur etudiant, Utilisateur admin) {
         String sujetAdmin = "Nouveau mémoire soumis";
@@ -391,9 +403,11 @@ public class MemoireService {
 
 
 
-    public List<Memoire> chercherMemoiresPublics(String titre, String nom, String prenom) {
-        return memoireRepository.rechercherMemoiresPublicsValides(titre, nom, prenom);
+    public List<Memoire> chercherMemoiresPublics(String titre, String nom, String prenom, Long typeDocumentId, String typeDocumentNom) {
+        return memoireRepository.chercherMemoiresPublics(titre, nom, prenom, typeDocumentId, typeDocumentNom);
     }
+
+
 
 
     public MemoireDTO reSoumettreMemoire(Long memoireId, MultipartFile fichier, Utilisateur etudiant) throws IOException {

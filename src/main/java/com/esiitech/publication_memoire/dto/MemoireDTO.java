@@ -12,6 +12,11 @@ public class MemoireDTO {
         private boolean estPublic;
         private LocalDateTime dateSoumission;
         private UtilisateurDTO etudiant;
+        private String typeDocumentNom;
+        private Long typeDocumentId;
+
+
+
 
 
     // Getters & Setters
@@ -87,5 +92,21 @@ public class MemoireDTO {
 
     public void setEtudiant(UtilisateurDTO etudiant) {
         this.etudiant = etudiant;
+    }
+
+    public String getTypeDocumentNom() {
+        return typeDocumentNom;
+    }
+
+    public void setTypeDocumentNom(String typeDocumentNom) {
+        this.typeDocumentNom = typeDocumentNom;
+    }
+
+    public Long getTypeDocumentId() {
+        return typeDocumentId;
+    }
+
+    public void setTypeDocumentId(Long typeDocumentId) {
+        this.typeDocumentId = typeDocumentId;
     }
 }

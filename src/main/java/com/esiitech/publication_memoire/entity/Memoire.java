@@ -51,6 +51,11 @@ public class Memoire {
     @Column(length = 2000)
     private String commentaire;
 
+    @ManyToOne
+    @JoinColumn(name = "type_id")
+    private TypeDocument type;
+
+
 
     public Long getId() {
         return id;
@@ -155,5 +160,21 @@ public class Memoire {
 
     public void setTransmisAAdmin(boolean transmisAAdmin) {
         this.transmisAAdmin = transmisAAdmin;
+    }
+
+    public Boolean getTransmisAAdmin() {
+        return transmisAAdmin;
+    }
+
+    public void setTransmisAAdmin(Boolean transmisAAdmin) {
+        this.transmisAAdmin = transmisAAdmin;
+    }
+
+    public TypeDocument getType() {
+        return type;
+    }
+
+    public void setType(TypeDocument type) {
+        this.type = type;
     }
 }

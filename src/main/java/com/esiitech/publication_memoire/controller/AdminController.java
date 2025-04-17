@@ -116,11 +116,16 @@ public class AdminController {
             @RequestParam(required = false) String nom,
             @RequestParam(required = false) String prenom,
             @RequestParam(required = false) StatutMemoire statut,
-            @RequestParam(required = false) Boolean estPublic
+            @RequestParam(required = false) Boolean estPublic,
+            @RequestParam(required = false) Long typeDocumentId,
+            @RequestParam(required = false) String typeDocumentNom // ✅ Ajout ici
     ) {
-        List<Memoire> memoires = memoireRepository.rechercheFlexible(titre, nom, prenom, statut, estPublic);
+        List<Memoire> memoires = memoireRepository.rechercheFlexible(
+                titre, nom, prenom, statut, estPublic, typeDocumentId, typeDocumentNom
+        );
         return memoireMapper.toDtoList(memoires);
     }
+
 
 
 
