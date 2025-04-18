@@ -12,6 +12,10 @@ import com.esiitech.publication_memoire.repository.MemoireRepository;
 import com.esiitech.publication_memoire.service.FileStorageService;
 import com.esiitech.publication_memoire.service.MemoireService;
 import com.esiitech.publication_memoire.service.UtilisateurService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -48,22 +52,16 @@ public class MemoireController {
         this.memoireRepository = memoireRepository;
         this.memoireMapper = memoireMapper;
         this.utilisateurService = utilisateurService;
-        this.fileStorageService =fileStorageService;
+        this.fileStorageService = fileStorageService;
     }
 
-    /**
-     * Soumettre un mémoire par un étudiant.
-     */
+    @Operation(summary = "Soumettre un mémoire", description = "Permet à un étudiant de soumettre un mémoire")
+    @ApiResponse(responseCode = "200", description = "Mémoire soumis avec succès", content = @Content(schema = @Schema(implementation = MemoireDTO.class)))
     @PostMapping("/etudiant/soumettre")
-    @PreAuthorize("hasRole('ETUDIANT')") // S'assure que seul un étudiant peut soumettre
+    @PreAuthorize("hasRole('ETUDIANT')")
     public ResponseEntity<MemoireDTO> soumettreMemoire(@Valid @ModelAttribute SoumissionMemoireRequest request,
                                                        Principal principal) throws IOException {
-        // 🔍 Récupération de l'utilisateur (étudiant) à partir de l'e-mail
         Utilisateur etudiant = utilisateurService.getByEmail(principal.getName());
-
-        log.info("Soumission mémoire - Étudiant: {} ({})", etudiant.getNom(), etudiant.getEmail());
-
-        // 🚀 Appel au service pour soumettre le mémoire
         MemoireDTO memoireDTO = memoireService.soumettreMemoire(
                 etudiant.getId(),
                 request.getTypeDocumentId(),
@@ -71,71 +69,45 @@ public class MemoireController {
                 request.getDescription(),
                 request.getFichierWord()
         );
-
-
-        // Retour du DTO avec le statut HTTP 200 OK
         return ResponseEntity.ok(memoireDTO);
     }
 
-
-    /**
-     * Transmission d’un mémoire corrigé par un lecteur.
-     */
-    @PreAuthorize("hasRole('LECTEUR')")
+    @Operation(summary = "Transmettre un mémoire corrigé", description = "Transmission par un lecteur après correction")
     @PostMapping("/lecteur/transmettre")
+    @PreAuthorize("hasRole('LECTEUR')")
     public ResponseEntity<MemoireDTO> transmettreParLecteur(
             @Valid @ModelAttribute TransmissionLecteurRequest request,
             Principal principal) throws IOException {
-
         Utilisateur lecteur = utilisateurService.getByEmail(principal.getName());
-
-        log.info("Transmission mémoire ID: {} par lecteur ID: {}", request.getMemoireId(), lecteur.getId());
-
         MemoireDTO result = memoireService.transmettreParLecteur(
                 request.getMemoireId(),
                 lecteur.getId(),
                 request.getCommentaire(),
                 request.getFichierCorrige()
         );
-
         return ResponseEntity.ok(result);
     }
 
-
-    /**
-     * Télécharger le fichier original soumis par l’étudiant.
-     */
-    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Télécharger le fichier d’un mémoire")
     @GetMapping("/{id}/telecharger")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> telechargerFichierEtudiant(@PathVariable Long id) throws IOException {
         return memoireService.telechargerFichierOriginal(id);
     }
 
-
+    @Operation(summary = "Afficher ou télécharger le PDF validé d’un mémoire")
     @GetMapping("/{id}/pdf")
     public ResponseEntity<Resource> telechargerOuAfficherMemoirePdf(
             @PathVariable Long id,
             @RequestParam(defaultValue = "download") String mode) {
-
-        // Récupérer le mémoire
         Memoire memoire = memoireRepository.findById(id)
                 .orElseThrow(() -> new MemoireNotFoundException(id));
-
-        // Vérifier qu'il est validé
         if (memoire.getStatut() != StatutMemoire.VALIDE || memoire.getFichierPdf() == null) {
             throw new IllegalStateException("Le mémoire n’est pas encore publié.");
         }
-
-        // Charger le fichier
         Resource resource = fileStorageService.chargerFichier(memoire.getFichierPdf());
-
-        // Définir le nom du fichier propre
         String nomFichier = memoire.getTitre().replaceAll("[^a-zA-Z0-9]", "_") + ".pdf";
-
-        // Définir l'en-tête selon le mode
-        String disposition = mode.equalsIgnoreCase("inline")
-                ? "inline"
-                : "attachment";
+        String disposition = mode.equalsIgnoreCase("inline") ? "inline" : "attachment";
 
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
@@ -143,50 +115,37 @@ public class MemoireController {
                 .body(resource);
     }
 
-
-    /**
-     * Valider un mémoire (ADMIN).
-     */
-    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Valider un mémoire", description = "Valider un mémoire par l’admin")
     @PostMapping("/admin/valider")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MemoireDTO> validerMemoire(@RequestParam Long memoireId, Principal principal) throws Exception {
         Utilisateur admin = utilisateurService.getByEmail(principal.getName());
-        log.info("Validation mémoire ID: {} par admin ID: {}", memoireId, admin.getId());
         return ResponseEntity.ok(memoireService.validerMemoire(memoireId, admin.getId()));
     }
 
-    /**
-     * Rejeter un mémoire avec un commentaire (ADMIN).
-     */
-    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Rejeter un mémoire", description = "Rejet par l’admin avec un commentaire")
     @PostMapping("/admin/rejeter")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MemoireDTO> rejeterParAdmin(@RequestParam Long memoireId,
                                                       @RequestParam String commentaire) {
-        log.info("Rejet mémoire ID: {}, commentaire: {}", memoireId, commentaire);
         MemoireDTO memoireDTO = memoireService.rejeterParAdmin(memoireId, commentaire);
         return ResponseEntity.ok(memoireDTO);
     }
 
-    /**
-     * Changer la visibilité d’un mémoire (public ou privé).
-     */
-    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(summary = "Changer la visibilité d’un mémoire")
     @PutMapping("/visibilite")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MemoireDTO> changerVisibilite(@RequestParam Long memoireId,
                                                         @RequestParam boolean estPublic) {
-        log.info("Changement visibilité mémoire ID: {}, estPublic: {}", memoireId, estPublic);
         MemoireDTO memoireDTO = memoireService.changerVisibilite(memoireId, estPublic);
         return ResponseEntity.ok(memoireDTO);
     }
 
-    /**
-     * Obtenir les statistiques des mémoires selon le rôle.
-     */
-    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Obtenir les statistiques des mémoires")
     @GetMapping("/stats")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, Long>> getStats(Principal principal) {
         Utilisateur utilisateur = utilisateurService.getByEmail(principal.getName());
-
         return switch (utilisateur.getRole()) {
             case ETUDIANT -> ResponseEntity.ok(memoireService.compterMemoiresEtudiant(utilisateur));
             case LECTEUR -> ResponseEntity.ok(memoireService.compterMemoiresLecteur(utilisateur));
@@ -195,21 +154,15 @@ public class MemoireController {
         };
     }
 
-    /**
-     * Obtenir un mémoire précis par son ID.
-     */
-    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Obtenir un mémoire par ID")
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MemoireDTO> getMemoireById(@PathVariable Long id) {
         MemoireDTO dto = memoireService.getMemoireById(id);
         return ResponseEntity.ok(dto);
     }
 
-
-    /**
-     *  recherche des etudiant non connecter
-     */
-
+    @Operation(summary = "Rechercher des mémoires publiés", description = "Recherche publique")
     @GetMapping("/public/recherche")
     public List<MemoireDTO> rechercherMemoiresPublics(
             @RequestParam(required = false) String titre,
@@ -222,12 +175,7 @@ public class MemoireController {
         return memoireMapper.toDtoList(memoires);
     }
 
-
-
-    /**
-     *recherche des etudiants connecter
-     */
-
+    @Operation(summary = "Rechercher des mémoires (utilisateur connecté)")
     @GetMapping("/recherche")
     public List<MemoireDTO> rechercherMemoires(
             @RequestParam(required = false) String titre,
@@ -240,17 +188,11 @@ public class MemoireController {
         return memoireMapper.toDtoList(memoires);
     }
 
-
-
-    @PreAuthorize("hasRole('ETUDIANT')")
+    @Operation(summary = "Re-soumettre un mémoire après correction")
     @PutMapping("/etudiant/{id}/resoumettre")
+    @PreAuthorize("hasRole('ETUDIANT')")
     public MemoireDTO resoumettreMemoire(@PathVariable Long id, @RequestParam("fichier") MultipartFile fichier) throws IOException {
         Utilisateur etudiant = utilisateurService.getUtilisateurConnecte();
         return memoireService.reSoumettreMemoire(id, fichier, etudiant);
     }
-
-
-
-
-
 }

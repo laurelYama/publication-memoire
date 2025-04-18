@@ -1,14 +1,14 @@
 package com.esiitech.publication_memoire.service;
 
 import com.esiitech.publication_memoire.config.JwtService;
-import com.esiitech.publication_memoire.dto.ChangePasswordRequest;
-import com.esiitech.publication_memoire.dto.ResetPasswordRequest;
-import com.esiitech.publication_memoire.dto.UtilisateurDTO;
+import com.esiitech.publication_memoire.dto.*;
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.enums.Role;
+import com.esiitech.publication_memoire.exception.UtilisateurNotFoundException;
 import com.esiitech.publication_memoire.logging.Loggable;
 import com.esiitech.publication_memoire.mapper.UtilisateurMapper;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,29 +29,34 @@ public class UtilisateurService {
     private final EmailService emailService;
     private final JwtService jwtService;
     private final UtilisateurMapper utilisateurMapper;
+    private TrombinoscopeService trombinoscopeService;
 
     // Constructeur pour l'injection des dépendances
     public UtilisateurService(UtilisateurRepository utilisateurRepository, EmailService emailService, 
                               PasswordEncoder passwordEncoder, JwtService jwtService,
-                              UtilisateurMapper utilisateurMapper) {
+                              UtilisateurMapper utilisateurMapper,
+                              TrombinoscopeService trombinoscopeService) {
         this.utilisateurRepository = utilisateurRepository;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.utilisateurMapper = utilisateurMapper;
+        this.trombinoscopeService = trombinoscopeService;
 
     }
 
     // Expression régulière pour valider la robustesse du mot de passe
     private static final String MOT_DE_PASSE_REGEX =
-            "^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+            "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d])[A-Za-z\\d[^\\s]]{8,}$";
 
     // Méthode pour vérifier si le mot de passe est suffisamment fort
-    private boolean estMotDePasseFort(String motDePasse) {
+    public boolean estMotDePasseFort(String motDePasse) {
         Pattern pattern = Pattern.compile(MOT_DE_PASSE_REGEX);
         Matcher matcher = pattern.matcher(motDePasse);
         return matcher.matches();  // Renvoie true si le mot de passe respecte les critères
     }
+
+
 
     // Génération d'un mot de passe temporaire aléatoire
     private String generateTemporaryPassword() {
@@ -256,5 +261,44 @@ public class UtilisateurService {
                 .orElseThrow(() -> new UsernameNotFoundException("Utilisateur non trouvé avec l’email : " + email));
     }
 
+
+
+    public void creerUtilisateurDepuisTrombinoscope(String email, String motDePasse) {
+        // Recherche de l'étudiant dans le Trombinoscope
+        EtudiantDto etudiant;
+        try {
+            etudiant = trombinoscopeService.chercherEtudiant(email);
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la recherche de l'étudiant dans le trombinoscope : " + e.getMessage(), e);
+        }
+
+        // Vérification si les données de l'étudiant ont été récupérées
+        if (etudiant == null) {
+            throw new RuntimeException("Aucune donnée trouvée pour cet email dans le trombinoscope.");
+        }
+
+        // Création et sauvegarde de l'utilisateur dans la base de données
+        Utilisateur utilisateur = new Utilisateur();
+        utilisateur.setNom(etudiant.getNom());
+        utilisateur.setPrenom(etudiant.getPrenom());
+        utilisateur.setEmail(etudiant.getEmail());
+        utilisateur.setActif(true);
+        utilisateur.setRole(Role.ETUDIANT);
+        utilisateur.setMotDePasse(passwordEncoder.encode(motDePasse)); // Hachage du mot de passe
+        utilisateur.setPasswordCreated(true);
+
+        utilisateurRepository.save(utilisateur);
+    }
+
+
+
+    public Utilisateur trouverDeuxiemeAdmin() {
+        PageRequest pageRequest = PageRequest.of(1, 1);
+        List<Utilisateur> admins = utilisateurRepository.findByRoleOrderByIdAsc(Role.ADMIN, pageRequest);
+        if (admins.isEmpty()) {
+            throw new UtilisateurNotFoundException("Deuxième administrateur non trouvé");
+        }
+        return admins.get(0);
+    }
 
 }

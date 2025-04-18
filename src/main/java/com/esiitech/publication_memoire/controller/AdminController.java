@@ -11,7 +11,11 @@ import com.esiitech.publication_memoire.repository.MemoireRepository;
 import com.esiitech.publication_memoire.repository.UtilisateurRepository;
 import com.esiitech.publication_memoire.service.MemoireService;
 import com.esiitech.publication_memoire.service.UtilisateurService;
-import org.springframework.http.HttpStatus;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +36,6 @@ public class AdminController {
     private final MemoireRepository memoireRepository;
     private final MemoireMapper memoireMapper;
 
-
     public AdminController(UtilisateurService utilisateurService,
                            UtilisateurRepository utilisateurRepository,
                            MemoireService memoireService,
@@ -41,10 +44,15 @@ public class AdminController {
         this.utilisateurService = utilisateurService;
         this.utilisateurRepository = utilisateurRepository;
         this.memoireService = memoireService;
-        this.memoireRepository =memoireRepository;
+        this.memoireRepository = memoireRepository;
         this.memoireMapper = memoireMapper;
     }
 
+    @Operation(summary = "Ajouter un nouvel utilisateur", description = "Ajoute un utilisateur avec les détails fournis dans la requête.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur créé avec succès"),
+            @ApiResponse(responseCode = "400", description = "Données invalides ou rôle incorrect")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/utilisateurs")
     public ResponseEntity<?> ajouterUtilisateur(@RequestBody UtilisateurDTO request) {
@@ -52,13 +60,12 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("message", "Tous les champs sont requis, y compris le rôle."));
         }
 
-        // Vérifier si l'email est déjà utilisé
         if (utilisateurRepository.existsByEmail(request.getEmail())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Cet email est déjà utilisé."));
         }
 
         try {
-            Role role = Role.valueOf(request.getRole().toUpperCase()); // Convertit le String en enum
+            Role role = Role.valueOf(request.getRole().toUpperCase());
             Utilisateur utilisateur = utilisateurService.creerUtilisateur(
                     request.getNom(), request.getPrenom(), request.getEmail(), role
             );
@@ -69,6 +76,8 @@ public class AdminController {
         }
     }
 
+    @Operation(summary = "Récupérer la liste des rôles disponibles", description = "Renvoie les rôles pouvant être assignés aux utilisateurs.")
+    @ApiResponse(responseCode = "200", description = "Liste des rôles renvoyée avec succès")
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/roles")
     public ResponseEntity<List<String>> getRoles() {
@@ -78,38 +87,56 @@ public class AdminController {
         return ResponseEntity.ok(roles);
     }
 
+    @Operation(summary = "Activer un utilisateur", description = "Active un utilisateur en fonction de son ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur activé avec succès"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/utilisateur/{id}/activer")
     public ResponseEntity<?> activerUtilisateur(@PathVariable Long id) {
         return utilisateurService.activerUtilisateur(id, true);
     }
 
+    @Operation(summary = "Désactiver un utilisateur", description = "Désactive un utilisateur en fonction de son ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Utilisateur désactivé avec succès"),
+            @ApiResponse(responseCode = "404", description = "Utilisateur non trouvé")
+    })
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/utilisateur/{id}/desactiver")
     public ResponseEntity<?> desactiverUtilisateur(@PathVariable Long id) {
         return utilisateurService.activerUtilisateur(id, false);
     }
 
-    @GetMapping("/lecteurs")
+    @Operation(summary = "Récupérer les lecteurs", description = "Renvoie la liste des lecteurs enregistrés dans le système.")
+    @ApiResponse(responseCode = "200", description = "Liste des lecteurs renvoyée avec succès")
     @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/lecteurs")
     public ResponseEntity<List<UtilisateurDTO>> getLecteurs() {
         List<UtilisateurDTO> lecteurs = utilisateurService.recupererLecteurs();
         return ResponseEntity.ok(lecteurs);
     }
 
+    @Operation(summary = "Assigner un lecteur à un mémoire", description = "Assigne un lecteur à un mémoire spécifique.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lecteur assigné avec succès au mémoire"),
+            @ApiResponse(responseCode = "404", description = "Mémoire ou lecteur non trouvé")
+    })
     @PutMapping("/assigner-lecteur")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<MemoireDTO> assignerLecteur(
             @RequestParam Long memoireId,
             @RequestParam Long lecteurId,
             Principal principal) {
-
         Utilisateur admin = utilisateurService.getByEmail(principal.getName());
         MemoireDTO memoireDTO = memoireService.assignerLecteur(memoireId, lecteurId, admin.getId());
 
         return ResponseEntity.ok(memoireDTO);
     }
 
+    @Operation(summary = "Recherche flexible des mémoires", description = "Permet de rechercher des mémoires en utilisant divers critères.")
+    @ApiResponse(responseCode = "200", description = "Liste des mémoires correspondant aux critères renvoyée avec succès")
     @GetMapping("/recherche/tous")
     public List<MemoireDTO> rechercherTousLesMemoires(
             @RequestParam(required = false) String titre,
@@ -118,23 +145,11 @@ public class AdminController {
             @RequestParam(required = false) StatutMemoire statut,
             @RequestParam(required = false) Boolean estPublic,
             @RequestParam(required = false) Long typeDocumentId,
-            @RequestParam(required = false) String typeDocumentNom // ✅ Ajout ici
+            @RequestParam(required = false) String typeDocumentNom
     ) {
         List<Memoire> memoires = memoireRepository.rechercheFlexible(
                 titre, nom, prenom, statut, estPublic, typeDocumentId, typeDocumentNom
         );
         return memoireMapper.toDtoList(memoires);
     }
-
-
-
-
-
-
-
-
-
-
-
 }
-

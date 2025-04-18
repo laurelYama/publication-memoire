@@ -4,7 +4,6 @@ import com.esiitech.publication_memoire.dto.MemoireDTO;
 import com.esiitech.publication_memoire.entity.Memoire;
 import com.esiitech.publication_memoire.entity.TypeDocument;
 import com.esiitech.publication_memoire.entity.Utilisateur;
-import com.esiitech.publication_memoire.enums.Role;
 import com.esiitech.publication_memoire.enums.StatutMemoire;
 import com.esiitech.publication_memoire.exception.MemoireNotFoundException;
 import com.esiitech.publication_memoire.exception.UtilisateurNotFoundException;
@@ -45,6 +44,7 @@ public class MemoireService {
     private final FileStorageService fileStorageService;
     private final FileConversionService fileConversionService;
     private final TypeDocumentRepository typeDocumentRepository;
+    private final UtilisateurService utilisateurService;
 
     // Types MIME acceptés pour les documents Word
     private static final String[] WORD_MIME_TYPES = {
@@ -63,7 +63,8 @@ public class MemoireService {
             HistoriqueActionService historiqueActionService,
             FileStorageService fileStorageService,
             FileConversionService fileConversionService,
-            TypeDocumentRepository typeDocumentRepository) {
+            TypeDocumentRepository typeDocumentRepository,
+            UtilisateurService utilisateurService) {
         this.memoireRepository = memoireRepository;
         this.utilisateurRepository = utilisateurRepository;
         this.emailService = emailService;
@@ -72,6 +73,7 @@ public class MemoireService {
         this.fileStorageService = fileStorageService;
         this.fileConversionService = fileConversionService;
         this.typeDocumentRepository = typeDocumentRepository;
+        this.utilisateurService = utilisateurService;
     }
 
     /**
@@ -106,9 +108,10 @@ public class MemoireService {
         // 6. Historique pour l'étudiant
         historiqueActionService.enregistrerAction(etudiant, "Soumission du mémoire", saved);
 
-        // 7. Récupération du premier admin
-        Utilisateur admin = utilisateurRepository.findFirstByRoleOrderByIdAsc(Role.ADMIN)
-                .orElseThrow(() -> new UtilisateurNotFoundException("Aucun administrateur trouvé"));
+        // 7. Récupération du deuxième admin
+        Utilisateur admin = utilisateurService.trouverDeuxiemeAdmin();
+
+
 
         // 8. Notification par mail à l'admin
         this.envoyerNotificationAdmin(saved, etudiant, admin);
@@ -138,7 +141,7 @@ public class MemoireService {
             Veuillez vous connecter à l'administration pour le consulter.
 
             Cordialement,
-            Système de gestion des mémoires
+            Esiitech-Archives
             """.formatted(admin.getNom(), etudiant.getNom(), etudiant.getEmail(), memoire.getTitre(), memoire.getDescription());
 
         // Envoi asynchrone pour ne pas bloquer le thread principal
@@ -157,7 +160,7 @@ public class MemoireService {
             Merci pour votre soumission et bonne chance pour la suite !
 
             Cordialement,
-            Équipe de gestion des mémoires
+            Esiitech-Archives
             """.formatted(etudiant.getNom(), memoire.getTitre());
 
         // Envoi asynchrone
@@ -187,9 +190,7 @@ public class MemoireService {
         memoire.setCommentaire(commentaire);
         memoire.setTransmisAAdmin(true);
 
-
-        Utilisateur admin = utilisateurRepository.findFirstByRoleOrderByIdAsc(Role.ADMIN)
-                .orElseThrow(() -> new UtilisateurNotFoundException("Aucun administrateur trouvé"));
+        Utilisateur admin = utilisateurService.trouverDeuxiemeAdmin();
 
         // Notification asynchrone à l'admin
         emailService.sendEmailAsync(admin.getEmail(), "Mémoire transmis par le lecteur",
@@ -203,7 +204,7 @@ public class MemoireService {
                     Veuillez vous connecter à l'administration pour le valider.
                     
                     Cordialement,
-                    Système de gestion des mémoires
+                    Esiitech-Archives
                     """,
                         admin.getNom(), memoire.getTitre(), lecteur.getPrenom(), lecteur.getNom(),
                         commentaire != null ? commentaire : "Aucun commentaire"));
@@ -281,7 +282,7 @@ public class MemoireService {
             emailService.sendEmailAsync(
                     etudiant.getEmail(),
                     "Rejet de votre mémoire",
-                    String.format("Bonjour %s,\n\nVotre mémoire \"%s\" a été rejeté pour la raison suivante :\n%s\n\nMerci de corriger et soumettre à nouveau.\n\nCordialement,\nL'équipe.",
+                    String.format("Bonjour %s,\n\nVotre mémoire \"%s\" a été rejeté pour la raison suivante :\n%s\n\nMerci de corriger et soumettre à nouveau.\n\nCordialement,\nEsiitech-Archives.",
                             etudiant.getPrenom(), memoire.getTitre(), commentaire)
             );
         }
@@ -436,7 +437,7 @@ public class MemoireService {
             throw new IllegalArgumentException("Le fichier doit être au format Word (.doc ou .docx).");
         }
 
-        // ✅ Ici on stocke le chemin retourné
+        // Ici on stocke le chemin retourné
         String chemin = fileStorageService.sauvegarderFichier(
                 fichier,
                 "memoires",
@@ -444,7 +445,7 @@ public class MemoireService {
                 "application/msword"
         );
 
-        // ✅ Puis on l’utilise ici
+        // Puis on l’utilise ici
         memoire.setFichierWord(chemin);
         memoire.setStatut(StatutMemoire.EN_ATTENTE);
         memoire.setTransmisAAdmin(false);
@@ -455,6 +456,7 @@ public class MemoireService {
 
         return memoireMapper.toDto(updated);
     }
+
 
 
 

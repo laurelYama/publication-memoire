@@ -53,7 +53,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/utilisateurs/activer-compte/**").permitAll() // Activation de compte
                         .requestMatchers("/api/memoires/recherche").permitAll()
                         .requestMatchers("/api/memoires/recherche-etudiant").permitAll()
-
+                        .requestMatchers("/api/mon-profil").permitAll()
 
                         .requestMatchers("/api/memoires/etudiant/soumettre").hasRole("ETUDIANT")
                         .requestMatchers("/api/memoires/lecteur/transmettre").hasRole("LECTEUR")
@@ -63,7 +63,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/memoires/recherche/**").authenticated()
                         .requestMatchers("/api/memoires/{id}/pdf").permitAll()
                         .requestMatchers("/api/memoirese/tudiant/{id}/resoumettre").hasRole("ETUDIANT")
-
+                        .requestMatchers("/api/otp/**").permitAll()
                         .requestMatchers("/api/memoires/{id}").authenticated()
                         .requestMatchers("/api/types/**").hasRole("ADMIN")
 
@@ -81,7 +81,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/historique/utilisateur/**").hasRole("ADMIN")
 
                         .requestMatchers("/api/memoires/lecteur/consulter").hasAnyRole("ADMIN", "LECTEUR")
-
+                        // Autoriser l'accès libre à Swagger
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
 
                         // Toutes les autres requêtes nécessitent une authentification
                         .anyRequest().authenticated()

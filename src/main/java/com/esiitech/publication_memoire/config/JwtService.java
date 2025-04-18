@@ -6,12 +6,15 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.GrantedAuthority;
+
 
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
@@ -25,8 +28,15 @@ public class JwtService {
     // Génère un token pour un utilisateur
     public String genererToken(UserDetails utilisateur) {
         Map<String, Object> claims = new HashMap<>();
+
+        // Ajoute les rôles dans les claims du JWT
+        claims.put("role", utilisateur.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()));
+
         return creerToken(claims, utilisateur.getUsername());
     }
+
 
     private String creerToken(Map<String, Object> claims, String nomUtilisateur) {
         return Jwts.builder()
@@ -65,7 +75,7 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    private Claims extraireTousLesClaims(String token) {
+    public Claims extraireTousLesClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(cleSecrete)
                 .build()

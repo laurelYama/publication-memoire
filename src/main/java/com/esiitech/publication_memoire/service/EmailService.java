@@ -1,7 +1,9 @@
 package com.esiitech.publication_memoire.service;
 
+import jakarta.mail.internet.MimeMessage;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -41,11 +43,35 @@ public class EmailService {
             Ce lien est valide pendant 30 minutes.
 
             Cordialement,
-            L'équipe de la plateforme.
+            Esiitech-Archives.
             """.formatted(prenom, nom.toUpperCase(), role.toUpperCase(), activationLink);
 
         sendEmailAsync(to, subject, body);
     }
+
+    public void envoyerOtp(String to, String otp) {
+        String sujet = "Votre code OTP de vérification";
+        String corps = "Bonjour,\n\nVotre code de confirmation est : " + otp +
+                "\nIl est valide pendant 5 minutes." +
+                "\n\nSi vous n'avez pas demandé ce code, veuillez ignorer ce message." +
+                "\n\nCordialement,\nEsiitech-Archives";
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setTo(to);
+            helper.setSubject(sujet);
+            helper.setText(corps, false); // false = plain text
+
+            mailSender.send(message);
+            System.out.println("Mail OTP envoyé à " + to);
+
+        } catch (Exception e) {
+            System.err.println("Erreur d'envoi OTP à " + to + " : " + e.getMessage());
+        }
+    }
+
 
 
 

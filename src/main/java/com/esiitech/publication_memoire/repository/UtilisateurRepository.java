@@ -2,6 +2,7 @@ package com.esiitech.publication_memoire.repository;
 
 import com.esiitech.publication_memoire.entity.Utilisateur;
 import com.esiitech.publication_memoire.enums.Role;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -12,7 +13,7 @@ public interface UtilisateurRepository extends JpaRepository<Utilisateur, Long> 
     Optional<Utilisateur> findByActivationToken(String token);
     boolean existsByEmail(String email);
     List<Utilisateur> findByRole(Role role);
-    Optional<Utilisateur> findFirstByRoleOrderByIdAsc(Role role);
+    List<Utilisateur> findByRoleOrderByIdAsc(Role role, Pageable pageable);
 
 
 }
